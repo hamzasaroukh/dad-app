@@ -1,0 +1,25 @@
+{
+  "name": "الحسين النجاري — مصاريف",
+  "short_name": "مصاريف",
+  "description": "تطبيق تتبع المصاريف الشهرية",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef2ff",
+  "theme_color": "#4338ca",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

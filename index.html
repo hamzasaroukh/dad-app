@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr" id="root">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>الحسين النجاري — مصاريف</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#4338ca" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="مصاريف" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
+    html, body { background: #eef2ff; min-height: 100vh; margin: 0; padding: 0; }
+
+    @keyframes slideUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-8px); }
+      40%,80% { transform: translateX(8px); }
+    }
+    .slide-up { animation: slideUp 0.22s ease-out; }
+    .fade-in  { animation: fadeIn  0.18s ease-out; }
+    .shake    { animation: shake 0.4s ease-out; }
+
+    input:focus { outline: none; border-color: #4f46e5 !important; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    select.field-input { appearance: auto; background: white; }
+
+    .fab {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 64px; height: 64px;
+      background: #4f46e5; color: white;
+      border-radius: 50%; border: none; cursor: pointer;
+      font-size: 38px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(79,70,229,0.45);
+      transition: transform 0.1s;
+    }
+    .fab:active { transform: scale(0.9); }
+
+    .btn-report {
+      position: fixed; bottom: 24px; left: 24px;
+      background: #16a34a; color: white;
+      border-radius: 50px; border: none; cursor: pointer;
+      padding: 14px 20px; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 8px 24px rgba(22,163,74,0.4);
+      transition: transform 0.1s;
+    }
+    .btn-report:active { transform: scale(0.95); }
+
+    .delete-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: none; cursor: pointer;
+      color: #f87171; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, color 0.15s;
+    }
+    .delete-btn:hover { background: #fee2e2; color: #dc2626; }
+    .delete-btn:active { transform: scale(0.85); }
+
+    .edit-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: none; cursor: pointer;
+      color: #94a3b8; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, color 0.15s;
+    }
+    .edit-btn:hover { background: #eff6ff; color: #4f46e5; }
+    .edit-btn:active { transform: scale(0.85); }
+
+    .btn-delete-confirm {
+      flex: 1; padding: 16px; border-radius: 12px; border: none;
+      background: #ef4444; color: white; font-size: 18px; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-delete-confirm:hover { background: #dc2626; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 50; display: flex;
+      align-items: flex-end; justify-content: center;
+    }
+    @media (min-width: 640px) {
+      .modal-overlay { align-items: center; }
+      .modal-sheet { border-radius: 24px !important; }
+    }
+
+    .field-input {
+      width: 100%; border: 2px solid #e2e8f0; border-radius: 12px;
+      padding: 12px 16px; font-size: 18px; color: #1e293b;
+      background: white; transition: border-color 0.15s;
+    }
+    .field-input:focus { border-color: #4f46e5; }
+
+    .btn-cancel {
+      flex: 1; padding: 16px; border-radius: 12px; font-size: 18px;
+      font-weight: 700; border: 2px solid #e2e8f0; background: white;
+      color: #64748b; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #f8fafc; }
+
+    .btn-save {
+      flex: 1; padding: 16px; border-radius: 12px; font-size: 18px;
+      font-weight: 700; border: none; background: #4f46e5;
+      color: white; cursor: pointer; transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-save:hover { background: #4338ca; }
+    .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .month-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: white; border: none; cursor: pointer;
+      color: #4f46e5; font-size: 28px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
+    }
+    .month-btn:active { transform: scale(0.88); }
+
+    .lang-btn {
+      background: rgba(255,255,255,0.2); color: white;
+      border: none; border-radius: 14px; padding: 12px 20px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .print-btn {
+      width: 100%; padding: 16px; border-radius: 16px; border: none;
+      background: #16a34a; color: white; font-size: 18px; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .print-btn:hover { background: #15803d; }
+
+    /* PIN */
+    .pin-btn {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: white; border: 1.5px solid #c7d2fe;
+      font-size: 24px; font-weight: 600; color: #1e1b4b;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      transition: background 0.1s, transform 0.1s;
+    }
+    .pin-btn:active { background: #eef2ff; transform: scale(0.92); }
+
+    @media print {
+      body { background: white !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="pin-screen"></div>
+<div id="app" style="display:none"></div>
+
+<script>
+// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+const { createClient } = supabase
+const db = createClient(
+  'https://wwjwufksgcojhjcxksqc.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3and1ZmtzZ2NvamhqY3hrc3FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MjcwNjgsImV4cCI6MjA5NDEwMzA2OH0.kY9jdofrBZ4T-q4PYUCeQOXGOQu0kk4ll6K27cs-OEk'
+)
+
+// ─── PIN ──────────────────────────────────────────────────────────────────────
+const CORRECT_PIN = '0000'
+let pinValue = ''
+let pinError = false
+
+function renderPin() {
+  const dots = Array.from({ length: 4 }, (_, i) => {
+    const filled = i < pinValue.length
+    const color = pinError ? '#ef4444' : (filled ? '#4338ca' : 'transparent')
+    const border = pinError ? '#ef4444' : '#4338ca'
+    return `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid ${border};transition:background 0.15s"></div>`
+  }).join('')
+
+  document.getElementById('pin-screen').innerHTML = `
+    <div style="min-height:100dvh;background:#eef2ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px">
+      <div style="text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#4338ca">الحسين النجاري</div>
+        <div style="font-size:14px;color:#6b7280;margin-top:4px">أدخل الرمز السري</div>
+      </div>
+      <div style="display:flex;gap:18px" id="pin-dots">${dots}</div>
+      ${pinError ? `<div style="color:#ef4444;font-size:13px;margin-top:-16px">رمز خاطئ</div>` : ''}
+      <div style="display:grid;grid-template-columns:repeat(3,72px);gap:12px">
+        ${['1','2','3','4','5','6','7','8','9'].map(d => `<button class="pin-btn" onclick="pinPress('${d}')">${d}</button>`).join('')}
+        <div></div>
+        <button class="pin-btn" onclick="pinPress('0')">0</button>
+        <button class="pin-btn" onclick="pinBack()" style="background:transparent;border:none;color:#4338ca;font-size:20px;box-shadow:none">⌫</button>
+      </div>
+    </div>
+  `
+}
+
+function pinPress(digit) {
+  if (pinValue.length >= 4) return
+  pinValue += digit
+  pinError = false
+  renderPin()
+
+  if (pinValue.length === 4) {
+    if (pinValue === CORRECT_PIN) {
+      sessionStorage.setItem('unlocked', 'true')
+      document.getElementById('pin-screen').style.display = 'none'
+      document.getElementById('app').style.display = 'block'
+      init()
+    } else {
+      pinError = true
+      document.getElementById('pin-dots').classList.add('shake')
+      setTimeout(() => { pinValue = ''; pinError = false; renderPin() }, 700)
+    }
+  }
+}
+
+function pinBack() {
+  pinValue = pinValue.slice(0, -1)
+  pinError = false
+  renderPin()
+}
+
+// Check if already unlocked this session
+if (sessionStorage.getItem('unlocked') === 'true') {
+  document.getElementById('pin-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'block'
+  init()
+} else {
+  renderPin()
+}
+
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+const TR = {
+  fr: {
+    subtitle:     'Mes Dépenses Mensuelles',
+    addExpense:   'Ajouter une dépense',
+    date:         'Date',
+    whatBought:   "Qu'avez-vous acheté ?",
+    descHint:     'viande, lait, pain...',
+    price:        'Prix',
+    currency:     'MAD',
+    save:         'Enregistrer',
+    cancel:       'Annuler',
+    dailyTotal:   'Total du jour :',
+    monthlyTotal: 'Total du mois :',
+    reportBtn:    'Rapport du mois',
+    print:        'Imprimer / PDF',
+    noExpenses:   'Aucune dépense ce mois-ci.\nAppuyez sur + pour commencer.',
+    loading:      'Chargement...',
+    langBtn:      'العربية',
+    months:       ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+    days:         ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
+    reportTitle:  'Rapport des dépenses',
+    dateCol:      'Date',
+    itemCol:      'Article',
+    amountCol:    'Montant',
+    deleteTitle:  'Supprimer ?',
+    deleteMsg:    'Voulez-vous vraiment supprimer cette dépense ?',
+    yes:          'Oui, supprimer',
+    no:           'Non, garder',
+    editTitle:    'Modifier la dépense',
+  },
+  ar: {
+    subtitle:     'مصاريفي الشهرية',
+    addExpense:   'إضافة مصروف',
+    date:         'التاريخ',
+    whatBought:   'ماذا اشتريت؟',
+    descHint:     'لحم، حليب، خبز...',
+    price:        'السعر',
+    currency:     'درهم',
+    save:         'حفظ',
+    cancel:       'إلغاء',
+    dailyTotal:   'مجموع اليوم:',
+    monthlyTotal: 'مجموع الشهر:',
+    reportBtn:    'تقرير الشهر',
+    print:        'طباعة / PDF',
+    noExpenses:   'لا توجد مصاريف هذا الشهر.\nاضغط + للبدء.',
+    loading:      'جاري التحميل...',
+    langBtn:      'Français',
+    months:       ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    days:         ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+    reportTitle:  'تقرير المصاريف',
+    dateCol:      'التاريخ',
+    itemCol:      'المادة',
+    amountCol:    'المبلغ',
+    deleteTitle:  'حذف؟',
+    deleteMsg:    'هل تريد حذف هذا المصروف؟',
+    yes:          'نعم، احذف',
+    no:           'لا، أبقِه',
+    editTitle:    'تعديل المصروف',
+  },
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const now = new Date()
+const S = {
+  lang:       localStorage.getItem('lang') || 'fr',
+  year:       now.getFullYear(),
+  month:      now.getMonth() + 1,
+  expenses:   [],
+  loading:    false,
+  showAdd:    false,
+  showReport: false,
+  deleteId:   null,
+  editingId:  null,
+}
+
+// ─── DATABASE ─────────────────────────────────────────────────────────────────
+async function fetchExpenses(year, month) {
+  const start = `${year}-${String(month).padStart(2,'0')}-01`
+  const last  = new Date(year, month, 0).getDate()
+  const end   = `${year}-${String(month).padStart(2,'0')}-${String(last).padStart(2,'0')}`
+  const { data, error } = await db.from('expenses').select('*')
+    .gte('date', start).lte('date', end)
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+async function insertExpense(date, desc, price) {
+  const { error } = await db.from('expenses').insert({ date, description: desc, price: parseFloat(price) })
+  if (error) throw error
+}
+
+async function deleteExpense(id) {
+  const { error } = await db.from('expenses').delete().eq('id', id)
+  if (error) throw error
+}
+
+async function editExpense(id, date, desc, price) {
+  const { error } = await db.from('expenses').update({ date, description: desc, price: parseFloat(price) }).eq('id', id)
+  if (error) throw error
+}
+
+// ─── LOAD + RENDER ────────────────────────────────────────────────────────────
+async function reload() {
+  S.loading = true
+  render()
+  try {
+    S.expenses = await fetchExpenses(S.year, S.month)
+  } catch(e) {
+    console.error(e)
+  }
+  S.loading = false
+  render()
+}
+
+function groupByDay(list) {
+  const m = {}
+  list.forEach(e => { if(!m[e.date]) m[e.date]=[]; m[e.date].push(e) })
+  return Object.entries(m)
+    .map(([date,exps]) => ({ date, expenses:exps, total:exps.reduce((s,e)=>s+Number(e.price),0) }))
+    .sort((a,b) => b.date.localeCompare(a.date))
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+function fmtDate(str, tr) {
+  const d = new Date(str + 'T00:00:00')
+  return `${tr.days[d.getDay()]} ${d.getDate()} ${tr.months[d.getMonth()]}`
+}
+
+function render() {
+  const tr   = TR[S.lang]
+  const dir  = S.lang === 'ar' ? 'rtl' : 'ltr'
+  const root = document.getElementById('root')
+  root.setAttribute('lang', S.lang)
+  root.setAttribute('dir',  dir)
+
+  const groups     = groupByDay(S.expenses)
+  const grandTotal = S.expenses.reduce((s,e)=>s+Number(e.price), 0)
+
+  document.getElementById('app').innerHTML = `
+    <header style="background:linear-gradient(135deg,#312e81,#4f46e5,#2563eb);padding:40px 20px 24px;box-shadow:0 4px 20px rgba(79,70,229,0.3)">
+      <div style="max-width:512px;margin:0 auto;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 style="color:white;font-size:28px;font-weight:800;margin:0">الحسين النجاري</h1>
+          <p style="color:#c7d2fe;font-size:15px;margin:4px 0 0;font-weight:500">${tr.subtitle}</p>
+        </div>
+        <button class="lang-btn" onclick="toggleLang()">${tr.langBtn}</button>
+      </div>
+    </header>
+
+    <main style="max-width:512px;margin:0 auto;padding:0 16px 160px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 0">
+        <button class="month-btn" onclick="prevMonth()">‹</button>
+        <h2 style="font-size:20px;font-weight:700;color:#334155;margin:0">${tr.months[S.month-1]} ${S.year}</h2>
+        <button class="month-btn" onclick="nextMonth()">›</button>
+      </div>
+
+      ${S.loading
+        ? `<div style="text-align:center;padding:80px 0;color:#94a3b8;font-size:18px">${tr.loading}</div>`
+        : groups.length === 0
+          ? `<div style="text-align:center;padding:80px 0;color:#94a3b8;white-space:pre-line">
+               <div style="font-size:64px;margin-bottom:16px">🛒</div>
+               <p style="font-size:18px;line-height:1.7">${tr.noExpenses}</p>
+             </div>`
+          : groups.map(g => renderCard(g, tr)).join('')
+      }
+
+      ${(!S.loading && groups.length > 0) ? `
+        <div style="background:#4f46e5;color:white;border-radius:20px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 24px rgba(79,70,229,0.35);margin-top:4px">
+          <span style="font-size:17px;font-weight:700">${tr.monthlyTotal}</span>
+          <span style="font-size:24px;font-weight:800">${grandTotal.toFixed(2)} ${tr.currency}</span>
+        </div>` : ''}
+    </main>
+
+    <button class="btn-report" onclick="openReport()">📊 ${tr.reportBtn}</button>
+    <button class="fab" onclick="openAdd()">+</button>
+
+    ${S.showAdd    ? addModal(tr, dir)                        : ''}
+    ${S.showReport ? reportModal(groups, grandTotal, tr, dir) : ''}
+    ${S.deleteId   ? deleteConfirmModal(tr, dir)              : ''}
+  `
+
+  if (S.showAdd) setTimeout(() => { const el=document.getElementById('m-day'); if(el) el.focus() }, 40)
+}
+
+function renderCard(g, tr) {
+  const items = g.expenses.map(e => `
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 16px">
+      <div style="flex:1;min-width:0">
+        <p style="font-size:18px;font-weight:600;color:#1e293b;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.description)}</p>
+      </div>
+      <span style="font-size:18px;font-weight:700;color:#4f46e5;white-space:nowrap">${Number(e.price).toFixed(2)} ${tr.currency}</span>
+      <button class="edit-btn" onclick="openEdit('${esc(e.id)}')" title="Modifier">✏️</button>
+      <button class="delete-btn" onclick="confirmDelete('${esc(e.id)}')" title="Supprimer">✕</button>
+    </div>
+  `).join('')
+
+  return `
+    <div style="background:white;border-radius:20px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #f1f5f9">
+      <div style="background:#eef2ff;padding:12px 16px;border-bottom:1px solid #e0e7ff">
+        <span style="font-weight:700;color:#4338ca;font-size:15px">${fmtDate(g.date, tr)}</span>
+      </div>
+      ${items}
+      <div style="background:#f8fafc;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f1f5f9">
+        <span style="font-size:14px;font-weight:600;color:#94a3b8">${tr.dailyTotal}</span>
+        <span style="font-size:18px;font-weight:700;color:#16a34a">${g.total.toFixed(2)} ${tr.currency}</span>
+      </div>
+    </div>
+  `
+}
+
+function addModal(tr, dir) {
+  const editing = S.editingId ? S.expenses.find(e => e.id === S.editingId) : null
+  const d = new Date()
+  const [eYear, eMonth, eDay] = editing
+    ? editing.date.split('-').map(Number)
+    : [d.getFullYear(), d.getMonth()+1, d.getDate()]
+
+  return `
+    <div class="modal-overlay fade-in" dir="${dir}" onclick="overlayClose(event,'closeAdd')">
+      <div class="modal-sheet slide-up" style="background:white;width:100%;max-width:512px;border-radius:28px 28px 0 0;padding:28px 24px 36px">
+        <h2 style="font-size:22px;font-weight:800;color:#1e293b;text-align:center;margin:0 0 24px">
+          ${editing ? tr.editTitle : tr.addExpense}
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div>
+            <label style="display:block;font-size:17px;font-weight:700;color:#475569;margin-bottom:8px">${tr.date}</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="field-input" type="number" id="m-day" min="1" max="31" placeholder="JJ" value="${eDay}"
+                style="width:72px;text-align:center;padding-left:8px;padding-right:8px" />
+              <select id="m-month" class="field-input" style="flex:1;cursor:pointer;padding-right:4px">
+                ${tr.months.map((m,i)=>`<option value="${i+1}" ${i+1===eMonth?'selected':''}>${m}</option>`).join('')}
+              </select>
+              <input class="field-input" type="number" id="m-year" min="2020" max="2099" placeholder="AAAA" value="${eYear}"
+                style="width:84px;text-align:center;padding-left:8px;padding-right:8px" />
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:17px;font-weight:700;color:#475569;margin-bottom:8px">${tr.whatBought}</label>
+            <input class="field-input" type="text" id="m-desc" placeholder="${tr.descHint}"
+              value="${editing ? esc(editing.description) : ''}"
+              onkeydown="if(event.key==='Enter')handleSave()" />
+          </div>
+          <div>
+            <label style="display:block;font-size:17px;font-weight:700;color:#475569;margin-bottom:8px">${tr.price} (${tr.currency})</label>
+            <input class="field-input" type="number" id="m-price" inputmode="decimal" placeholder="0.00" min="0" step="0.01"
+              value="${editing ? editing.price : ''}"
+              onkeydown="if(event.key==='Enter')handleSave()" />
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:28px">
+          <button class="btn-cancel" onclick="closeAdd()">${tr.cancel}</button>
+          <button class="btn-save" id="save-btn" onclick="handleSave()">${tr.save}</button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function deleteConfirmModal(tr, dir) {
+  return `
+    <div class="modal-overlay fade-in" dir="${dir}" style="align-items:center;padding:24px">
+      <div class="slide-up" style="background:white;border-radius:24px;padding:32px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+        <div style="font-size:52px;margin-bottom:14px">🗑️</div>
+        <h3 style="font-size:21px;font-weight:800;color:#1e293b;margin:0 0 10px">${tr.deleteTitle}</h3>
+        <p style="font-size:16px;color:#64748b;margin:0 0 28px;line-height:1.5">${tr.deleteMsg}</p>
+        <div style="display:flex;gap:12px">
+          <button class="btn-cancel" onclick="cancelDelete()">${tr.no}</button>
+          <button class="btn-delete-confirm" onclick="doDelete()">${tr.yes}</button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function reportModal(groups, grandTotal, tr, dir) {
+  const cards = groups.map(g => {
+    const rows = g.expenses.map(e => `
+      <div style="display:flex;justify-content:space-between;padding:8px 12px;border-top:1px solid #f8fafc">
+        <span style="color:#475569;font-size:14px">${esc(e.description)}</span>
+        <span style="font-weight:600;color:#1e293b;font-size:14px">${Number(e.price).toFixed(2)} ${tr.currency}</span>
+      </div>`).join('')
+    return `
+      <div style="border:1px solid #f1f5f9;border-radius:14px;overflow:hidden">
+        <div style="background:#eef2ff;padding:8px 12px;font-weight:700;color:#4338ca;font-size:14px">${g.date}</div>
+        ${rows}
+        <div style="background:#f8fafc;padding:8px 12px;display:flex;justify-content:space-between;border-top:1px solid #f1f5f9">
+          <span style="font-weight:600;color:#94a3b8;font-size:13px">${tr.dailyTotal}</span>
+          <span style="font-weight:700;color:#16a34a;font-size:14px">${g.total.toFixed(2)} ${tr.currency}</span>
+        </div>
+      </div>`
+  }).join('')
+
+  return `
+    <div class="modal-overlay fade-in" dir="${dir}" onclick="overlayClose(event,'closeReport')" style="align-items:center;padding:16px">
+      <div class="slide-up" style="background:white;width:100%;max-width:512px;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;max-height:88vh">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #f1f5f9">
+          <h2 style="font-size:17px;font-weight:800;color:#1e293b;margin:0">${tr.reportBtn} — ${TR[S.lang].months[S.month-1]} ${S.year}</h2>
+          <button onclick="closeReport()" style="width:36px;height:36px;border-radius:50%;border:none;background:none;font-size:20px;color:#94a3b8;cursor:pointer">✕</button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:10px">
+          ${groups.length===0 ? '<p style="text-align:center;color:#94a3b8;padding:40px 0;font-size:18px">🛒</p>' : cards}
+        </div>
+        <div style="padding:16px;border-top:1px solid #f1f5f9">
+          <div style="background:#4f46e5;color:white;border-radius:16px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <span style="font-size:17px;font-weight:700">${tr.monthlyTotal}</span>
+            <span style="font-size:24px;font-weight:800">${grandTotal.toFixed(2)} ${tr.currency}</span>
+          </div>
+          <button class="print-btn" onclick="handlePrint()">🖨️ ${tr.print}</button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────────────────────
+function toggleLang()  { S.lang = S.lang==='fr'?'ar':'fr'; localStorage.setItem('lang',S.lang); render() }
+function prevMonth()   { S.month===1 ? (S.month=12,S.year--) : S.month--; reload() }
+function nextMonth()   { S.month===12 ? (S.month=1,S.year++) : S.month++; reload() }
+function openAdd()     { S.editingId=null; S.showAdd=true; render() }
+function closeAdd()    { S.showAdd=false; S.editingId=null; render() }
+function openReport()  { S.showReport=true; render() }
+function closeReport() { S.showReport=false; render() }
+function overlayClose(e, fn) { if(e.target===e.currentTarget) window[fn]() }
+function confirmDelete(id) { S.deleteId=id; render() }
+function cancelDelete()    { S.deleteId=null; render() }
+function openEdit(id)      { S.editingId=id; S.showAdd=true; render() }
+
+async function doDelete() {
+  const id = S.deleteId
+  S.deleteId = null
+  await deleteExpense(id)
+  await reload()
+}
+
+async function handleSave() {
+  const day   = parseInt(document.getElementById('m-day').value)
+  const month = parseInt(document.getElementById('m-month').value)
+  const year  = parseInt(document.getElementById('m-year').value)
+  const desc  = document.getElementById('m-desc').value.trim()
+  const price = document.getElementById('m-price').value
+
+  const dayEl   = document.getElementById('m-day')
+  const descEl  = document.getElementById('m-desc')
+  const priceEl = document.getElementById('m-price')
+
+  let ok = true
+  if (!day||day<1||day>31||!year||year<2020) { dayEl.style.borderColor='#ef4444'; ok=false } else dayEl.style.borderColor='#e2e8f0'
+  if (!desc)                                  { descEl.style.borderColor='#ef4444'; ok=false } else descEl.style.borderColor='#e2e8f0'
+  if (!price||parseFloat(price)<=0)           { priceEl.style.borderColor='#ef4444'; ok=false } else priceEl.style.borderColor='#e2e8f0'
+  if (!ok) return
+
+  const btn = document.getElementById('save-btn')
+  if (btn) btn.disabled = true
+
+  const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+  try {
+    if (S.editingId) {
+      await editExpense(S.editingId, date, desc, price)
+      S.editingId = null
+    } else {
+      await insertExpense(date, desc, price)
+    }
+    S.showAdd = false
+    await reload()
+  } catch(e) {
+    console.error(e)
+    if (btn) btn.disabled = false
+  }
+}
+
+function handlePrint() {
+  const tr     = TR[S.lang]
+  const dir    = S.lang==='ar'?'rtl':'ltr'
+  const groups = groupByDay(S.expenses)
+  const total  = S.expenses.reduce((s,e)=>s+Number(e.price), 0)
+
+  const rows = groups.map(g =>
+    g.expenses.map(e =>
+      `<tr><td>${g.date}</td><td>${esc(e.description)}</td><td class="amt">${Number(e.price).toFixed(2)} ${tr.currency}</td></tr>`
+    ).join('') +
+    `<tr class="sub"><td colspan="2">${tr.dailyTotal}</td><td class="amt">${g.total.toFixed(2)} ${tr.currency}</td></tr>`
+  ).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="${S.lang}" dir="${dir}">
+<head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Cairo',sans-serif;margin:15mm 20mm;direction:${dir};color:#1e293b}
+  h1{font-size:26px;text-align:center;color:#1e1b4b;margin:0 0 4px}
+  h2{font-size:15px;text-align:center;color:#6b7280;margin:0 0 24px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{background:#4338ca;color:white;padding:10px 12px;text-align:start}
+  td{padding:9px 12px;border-bottom:1px solid #e2e8f0}
+  tr:nth-child(even){background:#f8fafc}
+  .sub{background:#eef2ff!important;font-weight:700;color:#4338ca}
+  tfoot tr{background:#4338ca!important;color:white;font-size:16px;font-weight:700}
+  tfoot td{padding:13px 12px}
+  .amt{text-align:end}
+</style></head>
+<body>
+<h1>الحسين النجاري</h1>
+<h2>${tr.reportTitle} — ${tr.months[S.month-1]} ${S.year}</h2>
+<table>
+  <thead><tr><th>${tr.dateCol}</th><th>${tr.itemCol}</th><th class="amt">${tr.amountCol}</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr><td colspan="2">${tr.monthlyTotal}</td><td class="amt">${total.toFixed(2)} ${tr.currency}</td></tr></tfoot>
+</table>
+</body></html>`
+
+  const w = window.open('','_blank')
+  if(w){ w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>w.print(),700) }
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') {
+    if(S.deleteId)        cancelDelete()
+    else if(S.showAdd)    closeAdd()
+    else if(S.showReport) closeReport()
+  }
+})
+
+// ─── START ────────────────────────────────────────────────────────────────────
+async function init() {
+  render()
+  await reload()
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {})
+  })
+}
+</script>
+</body>
+</html>
