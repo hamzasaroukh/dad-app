@@ -563,7 +563,7 @@ function reportModal(groups, grandTotal, tr, dir) {
         <div class="report-content" style="overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:10px">
           ${groups.length===0 ? '<p style="text-align:center;color:#94a3b8;padding:40px 0;font-size:18px">🛒</p>' : cards}
         </div>
-        <div style="padding:16px;border-top:1px solid #f1f5f9">
+        <div style="padding:16px;padding-bottom:max(16px, env(safe-area-inset-bottom));border-top:1px solid #f1f5f9">
           <div style="background:#4f46e5;color:white;border-radius:16px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <span style="font-size:17px;font-weight:700">${tr.monthlyTotal}</span>
             <span style="font-size:24px;font-weight:800">${grandTotal.toFixed(2)} ${tr.currency}</span>
@@ -582,13 +582,53 @@ function reportModal(groups, grandTotal, tr, dir) {
 async function shareWhatsApp() {
   const tr = TR[S.lang]
   const monthName = tr.months[S.month - 1]
+  const groups = groupByDay(S.expenses)
+  const grandTotal = S.expenses.reduce((s, e) => s + Number(e.price), 0)
   const btn = document.getElementById('whatsapp-btn')
   btn.disabled = true
   btn.textContent = '⏳ ...'
 
   try {
-    const el = document.querySelector('.report-content')
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+    const rows = groups.map(g => g.expenses.map((e, i) => `
+      <tr>
+        <td style="padding:10px 14px;font-size:14px;color:#475569;border-bottom:1px solid #f1f5f9">${i === 0 ? g.date : ''}</td>
+        <td style="padding:10px 14px;font-size:14px;color:#1e293b;border-bottom:1px solid #f1f5f9;direction:rtl;text-align:right">${esc(e.description)}</td>
+        <td style="padding:10px 14px;font-size:14px;font-weight:600;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:right;white-space:nowrap">${Number(e.price).toFixed(2)} MAD</td>
+      </tr>`).join('') + `
+      <tr style="background:#eef2ff">
+        <td colspan="2" style="padding:8px 14px;font-size:13px;color:#4338ca;font-weight:700">Total du jour</td>
+        <td style="padding:8px 14px;font-size:13px;color:#16a34a;font-weight:700;text-align:right">${g.total.toFixed(2)} MAD</td>
+      </tr>`
+    ).join('')
+
+    const div = document.createElement('div')
+    div.style.cssText = 'position:fixed;left:-9999px;top:0;width:750px;background:white;font-family:Cairo,sans-serif;'
+    div.innerHTML = `
+      <div style="padding:40px 40px 32px;border-bottom:4px solid #4f46e5;background:linear-gradient(135deg,#312e81,#4f46e5)">
+        <h1 style="color:white;font-size:32px;font-weight:800;margin:0;text-align:center">الحسين النجاري</h1>
+        <p style="color:#c7d2fe;font-size:16px;margin:8px 0 0;text-align:center;font-weight:500">Rapport des dépenses — ${monthName} ${S.year}</p>
+      </div>
+      <div style="padding:32px 40px">
+        <table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+          <thead>
+            <tr style="background:#f8fafc">
+              <th style="padding:12px 14px;text-align:left;font-size:13px;color:#94a3b8;font-weight:600;border-bottom:2px solid #e2e8f0">Date</th>
+              <th style="padding:12px 14px;text-align:right;font-size:13px;color:#94a3b8;font-weight:600;border-bottom:2px solid #e2e8f0">Article</th>
+              <th style="padding:12px 14px;text-align:right;font-size:13px;color:#94a3b8;font-weight:600;border-bottom:2px solid #e2e8f0">Prix</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="background:#4f46e5;color:white;border-radius:14px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;margin-top:24px">
+          <span style="font-size:17px;font-weight:700">Total — ${monthName} ${S.year}</span>
+          <span style="font-size:26px;font-weight:800">${grandTotal.toFixed(2)} MAD</span>
+        </div>
+      </div>`
+
+    document.body.appendChild(div)
+    const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+    document.body.removeChild(div)
+
     const imgData = canvas.toDataURL('image/png')
     const { jsPDF } = window.jspdf
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -597,13 +637,14 @@ async function shareWhatsApp() {
     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
     const blob = pdf.output('blob')
     const file = new File([blob], `rapport-${monthName}-${S.year}.pdf`, { type: 'application/pdf' })
+
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: `Rapport ${monthName} ${S.year}` })
     } else {
       pdf.save(`rapport-${monthName}-${S.year}.pdf`)
     }
-  } catch(e) {
-    alert('Erreur: ' + e.message)
+  } catch(err) {
+    alert('Erreur: ' + err.message)
   }
 
   btn.disabled = false
