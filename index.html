@@ -15,6 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
     html, body { background: #eef2ff; min-height: 100vh; margin: 0; padding: 0; }
@@ -558,7 +560,7 @@ function reportModal(groups, grandTotal, tr, dir) {
           <h2 style="font-size:17px;font-weight:800;color:#1e293b;margin:0">${tr.reportBtn} — ${TR[S.lang].months[S.month-1]} ${S.year}</h2>
           <button onclick="closeReport()" style="width:36px;height:36px;border-radius:50%;border:none;background:none;font-size:20px;color:#94a3b8;cursor:pointer">✕</button>
         </div>
-        <div style="overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div class="report-content" style="overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:10px">
           ${groups.length===0 ? '<p style="text-align:center;color:#94a3b8;padding:40px 0;font-size:18px">🛒</p>' : cards}
         </div>
         <div style="padding:16px;border-top:1px solid #f1f5f9">
@@ -567,6 +569,9 @@ function reportModal(groups, grandTotal, tr, dir) {
             <span style="font-size:24px;font-weight:800">${grandTotal.toFixed(2)} ${tr.currency}</span>
           </div>
           <button class="print-btn" onclick="handlePrint()">🖨️ ${tr.print}</button>
+          <button id="whatsapp-btn" onclick="shareWhatsApp()" style="width:100%;margin-top:10px;padding:16px;border-radius:16px;border:none;background:#25D366;color:white;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit">
+            📤 ${S.lang === 'fr' ? 'Envoyer sur WhatsApp' : 'إرسال عبر واتساب'}
+          </button>
         </div>
       </div>
     </div>
@@ -574,6 +579,37 @@ function reportModal(groups, grandTotal, tr, dir) {
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
+async function shareWhatsApp() {
+  const tr = TR[S.lang]
+  const monthName = tr.months[S.month - 1]
+  const btn = document.getElementById('whatsapp-btn')
+  btn.disabled = true
+  btn.textContent = '⏳ ...'
+
+  try {
+    const el = document.querySelector('.report-content')
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+    const imgData = canvas.toDataURL('image/png')
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const imgWidth = 210
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+    const blob = pdf.output('blob')
+    const file = new File([blob], `rapport-${monthName}-${S.year}.pdf`, { type: 'application/pdf' })
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: `Rapport ${monthName} ${S.year}` })
+    } else {
+      pdf.save(`rapport-${monthName}-${S.year}.pdf`)
+    }
+  } catch(e) {
+    alert('Erreur: ' + e.message)
+  }
+
+  btn.disabled = false
+  btn.textContent = S.lang === 'fr' ? '📤 Envoyer sur WhatsApp' : '📤 إرسال عبر واتساب'
+}
+
 function toggleLang()  { S.lang = S.lang==='fr'?'ar':'fr'; localStorage.setItem('lang',S.lang); render() }
 function prevMonth()   { S.month===1 ? (S.month=12,S.year--) : S.month--; reload() }
 function nextMonth()   { S.month===12 ? (S.month=1,S.year++) : S.month++; reload() }
