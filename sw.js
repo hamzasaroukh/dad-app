@@ -1,14 +1,12 @@
-const CACHE = 'hussein-app-v1'
-const ASSETS = [
-  './index.html',
+const CACHE = 'hussein-app-v3'
+const STATIC = [
   './manifest.json',
   './icon.svg',
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap',
 ]
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
   )
 })
 
@@ -21,6 +19,14 @@ self.addEventListener('activate', e => {
 })
 
 self.addEventListener('fetch', e => {
+  // Always fetch index.html fresh from network
+  if (e.request.url.endsWith('index.html') || e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match('./index.html'))
+    )
+    return
+  }
+  // Cache first for static assets
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   )
