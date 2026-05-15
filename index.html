@@ -406,7 +406,10 @@ function render() {
           <h1 style="color:white;font-size:28px;font-weight:800;margin:0">الحسين النجاري</h1>
           <p style="color:#c7d2fe;font-size:15px;margin:4px 0 0;font-weight:500">${tr.subtitle}</p>
         </div>
-        <button class="lang-btn" onclick="toggleLang()">${tr.langBtn}</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <button class="lang-btn" onclick="toggleLang()">${tr.langBtn}</button>
+          <span onclick="adminClear()" style="color:rgba(255,255,255,0.15);font-size:9px;cursor:pointer;user-select:none;letter-spacing:1px">···</span>
+        </div>
       </div>
     </header>
 
@@ -633,8 +636,16 @@ async function shareWhatsApp() {
     const { jsPDF } = window.jspdf
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const imgWidth = 210
+    const pageHeight = 297
     const imgHeight = (canvas.height * imgWidth) / canvas.width
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+    let remaining = imgHeight
+    let offset = 0
+    while (remaining > 0) {
+      pdf.addImage(imgData, 'PNG', 0, -offset, imgWidth, imgHeight)
+      remaining -= pageHeight
+      offset += pageHeight
+      if (remaining > 0) pdf.addPage()
+    }
     const blob = pdf.output('blob')
     const file = new File([blob], `rapport-${monthName}-${S.year}.pdf`, { type: 'application/pdf' })
 
@@ -652,6 +663,25 @@ async function shareWhatsApp() {
 }
 
 function toggleLang()  { S.lang = S.lang==='fr'?'ar':'fr'; localStorage.setItem('lang',S.lang); render() }
+
+async function adminClear() {
+  const tr = TR[S.lang]
+  const monthName = tr.months[S.month - 1]
+  const pin = prompt(`PIN admin — ${monthName} ${S.year}`)
+  if (pin !== '5566') return
+  const ok = confirm(`Supprimer toutes les dépenses de ${monthName} ${S.year} ?`)
+  if (!ok) return
+  try {
+    const start = `${S.year}-${String(S.month).padStart(2,'0')}-01`
+    const last  = new Date(S.year, S.month, 0).getDate()
+    const end   = `${S.year}-${String(S.month).padStart(2,'0')}-${String(last).padStart(2,'0')}`
+    const { error } = await db.from('expenses').delete().gte('date', start).lte('date', end)
+    if (error) throw error
+    await reload()
+  } catch(e) {
+    alert('Erreur: ' + e.message)
+  }
+}
 function prevMonth()   { S.month===1 ? (S.month=12,S.year--) : S.month--; reload() }
 function nextMonth()   { S.month===12 ? (S.month=1,S.year++) : S.month++; reload() }
 function openAdd()     { S.editingId=null; S.showAdd=true; render() }
