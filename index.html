@@ -169,6 +169,12 @@
 <div id="app" style="display:none"></div>
 
 <script>
+window.onerror = function(msg, src, line) {
+  document.body.innerHTML = `<div style="padding:30px;font-family:sans-serif;color:red;font-size:16px"><b>Error:</b> ${msg}<br><small>${src} line ${line}</small></div>`
+}
+window.addEventListener('unhandledrejection', function(e) {
+  document.body.innerHTML = `<div style="padding:30px;font-family:sans-serif;color:red;font-size:16px"><b>Async Error:</b> ${e.reason}</div>`
+})
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const { createClient } = supabase
 const db = createClient(
@@ -233,14 +239,7 @@ function pinBack() {
   renderPin()
 }
 
-// Check if already unlocked this session
-if (sessionStorage.getItem('unlocked') === 'true') {
-  document.getElementById('pin-screen').style.display = 'none'
-  document.getElementById('app').style.display = 'block'
-  init()
-} else {
-  renderPin()
-}
+renderPin()
 
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
 const TR = {
@@ -307,7 +306,7 @@ const TR = {
 // ─── STATE ────────────────────────────────────────────────────────────────────
 const now = new Date()
 const S = {
-  lang:       localStorage.getItem('lang') || 'fr',
+  lang:       ['fr','ar'].includes(localStorage.getItem('lang')) ? localStorage.getItem('lang') : 'fr',
   year:       now.getFullYear(),
   month:      now.getMonth() + 1,
   expenses:   [],
@@ -316,6 +315,13 @@ const S = {
   showReport: false,
   deleteId:   null,
   editingId:  null,
+}
+
+// Check if already unlocked this session
+if (sessionStorage.getItem('unlocked') === 'true') {
+  document.getElementById('pin-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'block'
+  init()
 }
 
 // ─── DATABASE ─────────────────────────────────────────────────────────────────
@@ -331,9 +337,16 @@ async function fetchExpenses(year, month) {
   return data || []
 }
 
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwYYrTUlD5juG669qM40QzaZ5gScH62EJi2MqF-hLdhjU2WYH8yHhADC2dQdwtmZryL7Q/exec'
+
 async function insertExpense(date, desc, price) {
   const { error } = await db.from('expenses').insert({ date, description: desc, price: parseFloat(price) })
   if (error) throw error
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({ date, description: desc, price: parseFloat(price) })
+  }).catch(() => {})
 }
 
 async function deleteExpense(id) {
