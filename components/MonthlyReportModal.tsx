@@ -50,8 +50,9 @@ export default function MonthlyReportModal({
         )
         .join('')
 
+      const containerWidth = 750
       const div = document.createElement('div')
-      div.style.cssText = 'position:fixed;left:-9999px;top:0;width:750px;background:white;font-family:Cairo,sans-serif;'
+      div.style.cssText = `position:fixed;left:-9999px;top:0;width:${containerWidth}px;background:white;font-family:Cairo,sans-serif;`
       div.innerHTML = `
         <div style="padding:40px 40px 32px;border-bottom:4px solid #4f46e5;background:linear-gradient(135deg,#312e81,#4f46e5)">
           <h1 style="color:white;font-size:32px;font-weight:800;margin:0;text-align:center">الحسين النجاري</h1>
@@ -75,22 +76,40 @@ export default function MonthlyReportModal({
         </div>`
 
       document.body.appendChild(div)
+
+      // Record where each table row sits (in CSS px, relative to the container),
+      // so page breaks can be chosen between rows instead of slicing through one.
+      const imgWidth = 210
+      const pageHeight = 297
+      const mmPerPx = imgWidth / containerWidth
+      const pageHeightPx = pageHeight / mmPerPx
+      const containerTop = div.getBoundingClientRect().top
+      const rowEdges = Array.from(div.querySelectorAll('tbody tr')).map((tr) => {
+        const r = tr.getBoundingClientRect()
+        return { top: r.top - containerTop, bottom: r.bottom - containerTop }
+      })
+
       const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
       document.body.removeChild(div)
 
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const imgWidth = 210
-      const pageHeight = 297
       const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let remaining = imgHeight
-      let offset = 0
-      while (remaining > 0) {
-        pdf.addImage(imgData, 'PNG', 0, -offset, imgWidth, imgHeight)
-        remaining -= pageHeight
-        offset += pageHeight
-        if (remaining > 0) pdf.addPage()
+
+      const pageBreaksPx = [0]
+      let pageStart = 0
+      for (const edge of rowEdges) {
+        if (edge.bottom - pageStart > pageHeightPx) {
+          pageStart = edge.top
+          pageBreaksPx.push(pageStart)
+        }
       }
+
+      pageBreaksPx.forEach((breakPx, i) => {
+        if (i > 0) pdf.addPage()
+        const offsetMm = breakPx * mmPerPx
+        pdf.addImage(imgData, 'PNG', 0, -offsetMm, imgWidth, imgHeight)
+      })
       const blob = pdf.output('blob')
       const file = new File([blob], `rapport-${tr.months[month - 1]}-${year}.pdf`, { type: 'application/pdf' })
 
