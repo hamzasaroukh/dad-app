@@ -1,4 +1,4 @@
-const CACHE = 'hussein-app-v4'
+const CACHE = 'hussein-app-v5'
 const STATIC = [
   '/manifest.json',
   '/icon.svg',
