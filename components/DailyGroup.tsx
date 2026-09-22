@@ -43,7 +43,9 @@ export default function DailyGroup({ group, onDelete }: Props) {
               {expense.price.toFixed(2)} {tr.currency}
             </span>
             <button
-              onClick={() => onDelete(expense.id)}
+              onClick={() => {
+                if (window.confirm(tr.confirmDelete)) onDelete(expense.id)
+              }}
               className="shrink-0 w-9 h-9 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center text-lg transition-colors active:scale-90"
               aria-label="Supprimer"
             >

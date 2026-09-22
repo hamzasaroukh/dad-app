@@ -19,6 +19,7 @@ export const translations = {
     noExpenses: 'Aucune dépense ce mois-ci.\nAppuyez sur + pour commencer.',
     loading: 'Chargement...',
     delete: '✕',
+    confirmDelete: 'Supprimer cette dépense ?',
     months: [
       'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
@@ -48,6 +49,7 @@ export const translations = {
     noExpenses: 'لا توجد مصاريف هذا الشهر.\nاضغط + للبدء.',
     loading: 'جاري التحميل...',
     delete: '✕',
+    confirmDelete: 'هل تريد حذف هذا المصروف؟',
     months: [
       'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
       'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
