@@ -16,7 +16,7 @@ import type { Expense } from './types'
 const expensesRef = collection(firestore, 'expenses')
 
 const SHEETS_URL =
-  'https://script.google.com/macros/s/AKfycbwYYrTUlD5juG669qM40QzaZ5gScH62EJi2MqF-hLdhjU2WYH8yHhADC2dQdwtmZryL7Q/exec'
+  'https://script.google.com/macros/s/AKfycbxowG3JwjfHfTyy6LMUT1gq-AUQnH-oYe37WBJkEt12znU5_S1J-VQK6l9zzR0jMi68jQ/exec'
 
 function logToSheets(expense: { date: string; description: string; price: number }) {
   fetch(SHEETS_URL, {
