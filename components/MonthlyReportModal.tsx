@@ -77,17 +77,38 @@ export default function MonthlyReportModal({
 
       document.body.appendChild(div)
 
-      // Record where each table row sits (in CSS px, relative to the container),
-      // so page breaks can be chosen between rows instead of slicing through one.
+      // Insert invisible spacer rows before any table row that would otherwise
+      // straddle a page boundary, so pages never cut through a row's content.
       const imgWidth = 210
       const pageHeight = 297
       const mmPerPx = imgWidth / containerWidth
       const pageHeightPx = pageHeight / mmPerPx
       const containerTop = div.getBoundingClientRect().top
-      const rowEdges = Array.from(div.querySelectorAll('tbody tr')).map((tr) => {
+      const rowElements = Array.from(div.querySelectorAll('tbody tr'))
+      const rowEdges = rowElements.map((tr) => {
         const r = tr.getBoundingClientRect()
         return { top: r.top - containerTop, bottom: r.bottom - containerTop }
       })
+
+      let pageStart = 0
+      let shift = 0
+      const spacerInsertions: { index: number; heightPx: number }[] = []
+      for (let i = 0; i < rowEdges.length; i++) {
+        const top = rowEdges[i].top + shift
+        const bottom = rowEdges[i].bottom + shift
+        if (bottom - pageStart > pageHeightPx) {
+          const gap = Math.max(0, pageStart + pageHeightPx - top)
+          spacerInsertions.push({ index: i, heightPx: gap })
+          shift += gap
+          pageStart += pageHeightPx
+        }
+      }
+      for (let i = spacerInsertions.length - 1; i >= 0; i--) {
+        const { index, heightPx } = spacerInsertions[i]
+        const spacerTr = document.createElement('tr')
+        spacerTr.innerHTML = `<td colspan="3" style="height:${heightPx}px;padding:0;border:none"></td>`
+        rowElements[index].parentElement!.insertBefore(spacerTr, rowElements[index])
+      }
 
       const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
       document.body.removeChild(div)
@@ -96,20 +117,14 @@ export default function MonthlyReportModal({
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-      const pageBreaksPx = [0]
-      let pageStart = 0
-      for (const edge of rowEdges) {
-        if (edge.bottom - pageStart > pageHeightPx) {
-          pageStart = edge.top
-          pageBreaksPx.push(pageStart)
-        }
+      let remaining = imgHeight
+      let offset = 0
+      while (remaining > 0) {
+        pdf.addImage(imgData, 'PNG', 0, -offset, imgWidth, imgHeight)
+        remaining -= pageHeight
+        offset += pageHeight
+        if (remaining > 0) pdf.addPage()
       }
-
-      pageBreaksPx.forEach((breakPx, i) => {
-        if (i > 0) pdf.addPage()
-        const offsetMm = breakPx * mmPerPx
-        pdf.addImage(imgData, 'PNG', 0, -offsetMm, imgWidth, imgHeight)
-      })
       const blob = pdf.output('blob')
       const file = new File([blob], `rapport-${tr.months[month - 1]}-${year}.pdf`, { type: 'application/pdf' })
 
@@ -119,7 +134,10 @@ export default function MonthlyReportModal({
         pdf.save(`rapport-${tr.months[month - 1]}-${year}.pdf`)
       }
     } catch (err) {
-      window.alert(tr.whatsappError + (err instanceof Error ? err.message : String(err)))
+      const isCancel = err instanceof Error && err.name === 'AbortError'
+      if (!isCancel) {
+        window.alert(tr.whatsappError + (err instanceof Error ? err.message : String(err)))
+      }
     } finally {
       setSharing(false)
     }
