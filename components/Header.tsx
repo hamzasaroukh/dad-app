@@ -2,7 +2,11 @@
 
 import { useLanguage } from '@/contexts/LanguageContext'
 
-export default function Header() {
+interface Props {
+  onAdminClear: () => void
+}
+
+export default function Header({ onAdminClear }: Props) {
   const { lang, setLang } = useLanguage()
 
   return (
@@ -14,12 +18,20 @@ export default function Header() {
             {lang === 'fr' ? 'Mes Dépenses Mensuelles' : 'مصاريفي الشهرية'}
           </p>
         </div>
-        <button
-          onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
-          className="bg-white/20 hover:bg-white/30 active:bg-white/40 text-white font-bold rounded-2xl px-5 py-3 text-base transition-colors shadow"
-        >
-          {lang === 'fr' ? 'العربية' : 'Français'}
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
+            className="bg-white/20 hover:bg-white/30 active:bg-white/40 text-white font-bold rounded-2xl px-5 py-3 text-base transition-colors shadow"
+          >
+            {lang === 'fr' ? 'العربية' : 'Français'}
+          </button>
+          <span
+            onClick={onAdminClear}
+            className="text-white/40 text-[11px] tracking-widest cursor-pointer select-none"
+          >
+            ···
+          </span>
+        </div>
       </div>
     </header>
   )

@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   getDocs,
@@ -13,6 +14,17 @@ import { db as firestore } from './firebase'
 import type { Expense } from './types'
 
 const expensesRef = collection(firestore, 'expenses')
+
+const SHEETS_URL =
+  'https://script.google.com/macros/s/AKfycbwYYrTUlD5juG669qM40QzaZ5gScH62EJi2MqF-hLdhjU2WYH8yHhADC2dQdwtmZryL7Q/exec'
+
+function logToSheets(expense: { date: string; description: string; price: number }) {
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(expense),
+  }).catch(() => {})
+}
 
 export async function getExpenses(year: number, month: number): Promise<Expense[]> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`
@@ -48,9 +60,23 @@ export async function addExpense(
 ): Promise<Expense> {
   const created_at = new Date().toISOString()
   const docRef = await addDoc(expensesRef, { ...expense, created_at })
+  logToSheets(expense)
   return { id: docRef.id, created_at, ...expense }
+}
+
+export async function updateExpense(
+  id: string,
+  expense: Omit<Expense, 'id' | 'created_at'>
+): Promise<void> {
+  await updateDoc(doc(firestore, 'expenses', id), { ...expense })
 }
 
 export async function deleteExpense(id: string): Promise<void> {
   await deleteDoc(doc(firestore, 'expenses', id))
+}
+
+export async function deleteExpensesInRange(startDate: string, endDate: string): Promise<void> {
+  const q = query(expensesRef, where('date', '>=', startDate), where('date', '<=', endDate))
+  const snapshot = await getDocs(q)
+  await Promise.all(snapshot.docs.map((d) => deleteDoc(doc(firestore, 'expenses', d.id))))
 }

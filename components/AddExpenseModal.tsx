@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { translations } from '@/lib/translations'
+import type { Expense } from '@/lib/types'
 
 interface Props {
+  editing?: Expense | null
   onSave: (expense: { date: string; description: string; price: number }) => Promise<void>
   onClose: () => void
 }
@@ -17,13 +19,13 @@ function todayString() {
   return `${y}-${m}-${d}`
 }
 
-export default function AddExpenseModal({ onSave, onClose }: Props) {
+export default function AddExpenseModal({ editing, onSave, onClose }: Props) {
   const { lang, dir } = useLanguage()
   const tr = translations[lang]
 
-  const [date, setDate] = useState(todayString())
-  const [description, setDescription] = useState('')
-  const [price, setPrice] = useState('')
+  const [date, setDate] = useState(editing?.date ?? todayString())
+  const [description, setDescription] = useState(editing?.description ?? '')
+  const [price, setPrice] = useState(editing ? String(editing.price) : '')
   const [saving, setSaving] = useState(false)
 
   const isValid = description.trim() !== '' && price !== '' && !isNaN(parseFloat(price)) && parseFloat(price) > 0
@@ -46,7 +48,7 @@ export default function AddExpenseModal({ onSave, onClose }: Props) {
     >
       <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl">
         <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">
-          {tr.addExpense}
+          {editing ? tr.editExpense : tr.addExpense}
         </h2>
 
         <div className="space-y-5">
@@ -72,6 +74,7 @@ export default function AddExpenseModal({ onSave, onClose }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder={tr.descriptionPlaceholder}
               autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-lg text-slate-800 focus:border-indigo-500 focus:outline-none"
             />
           </div>
@@ -89,6 +92,7 @@ export default function AddExpenseModal({ onSave, onClose }: Props) {
               placeholder={tr.pricePlaceholder}
               min="0"
               step="0.01"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-lg text-slate-800 focus:border-indigo-500 focus:outline-none"
             />
           </div>

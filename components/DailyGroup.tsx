@@ -7,6 +7,7 @@ import type { DayGroup } from '@/lib/types'
 interface Props {
   group: DayGroup
   onDelete: (id: string) => void
+  onEdit: (id: string) => void
 }
 
 function formatDate(dateStr: string, tr: typeof translations.fr) {
@@ -17,7 +18,7 @@ function formatDate(dateStr: string, tr: typeof translations.fr) {
   return `${dayName} ${day} ${monthName}`
 }
 
-export default function DailyGroup({ group, onDelete }: Props) {
+export default function DailyGroup({ group, onDelete, onEdit }: Props) {
   const { lang } = useLanguage()
   const tr = translations[lang]
 
@@ -42,6 +43,13 @@ export default function DailyGroup({ group, onDelete }: Props) {
             <span className="text-indigo-600 font-bold text-lg whitespace-nowrap">
               {expense.price.toFixed(2)} {tr.currency}
             </span>
+            <button
+              onClick={() => onEdit(expense.id)}
+              className="shrink-0 w-9 h-9 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center text-base transition-colors active:scale-90"
+              aria-label="Modifier"
+            >
+              {tr.edit}
+            </button>
             <button
               onClick={() => {
                 if (window.confirm(tr.confirmDelete)) onDelete(expense.id)
