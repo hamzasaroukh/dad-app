@@ -21,7 +21,7 @@ export default function RegisterSW() {
       if (document.visibilityState === 'hidden') {
         hiddenAt = Date.now()
       } else if (document.visibilityState === 'visible') {
-        if (hiddenAt !== null && Date.now() - hiddenAt > 15000) {
+        if (hiddenAt !== null && Date.now() - hiddenAt > 3000) {
           window.location.reload()
         }
         hiddenAt = null
@@ -29,7 +29,18 @@ export default function RegisterSW() {
       }
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+
+    // iOS/Safari can restore the page from its back-forward cache instead of
+    // reloading it, silently keeping old code/data on screen — force a reload then.
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) window.location.reload()
+    }
+    window.addEventListener('pageshow', onPageShow)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pageshow', onPageShow)
+    }
   }, [])
 
   return null
