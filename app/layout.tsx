@@ -2,16 +2,28 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import PinLock from '@/components/PinLock'
+import RegisterSW from '@/components/RegisterSW'
 
 export const metadata: Metadata = {
   title: 'الحسين النجاري — مصاريف',
   description: 'تطبيق تتبع المصاريف الشهرية',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'مصاريف',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#4338ca',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <RegisterSW />
         <PinLock>
           <LanguageProvider>{children}</LanguageProvider>
         </PinLock>
