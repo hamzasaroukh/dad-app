@@ -50,7 +50,8 @@ function buildPrintWindow(
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Cairo', sans-serif; margin: 15mm 20mm; direction: ${dir}; color: #1e293b; }
+    @page { margin: 0; }
+    body { font-family: 'Cairo', sans-serif; padding: 15mm 20mm; margin: 0; direction: ${dir}; color: #1e293b; }
     h1 { font-size: 26px; text-align: center; margin-bottom: 4px; color: #1e1b4b; }
     h2 { font-size: 15px; text-align: center; color: #6b7280; margin-bottom: 24px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
